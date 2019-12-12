@@ -11,12 +11,10 @@ def fk(gen, tu, schem, tabelle, datp):
     cursor = conn.cursor()
     if gen == 1:
         print(conn.get_dsn_parameters(),"\n")
-        sql = """CREATE SCHEMA IF NOT EXISTS {schem}; 
-        CREATE TABLE IF NOT EXISTS {schem}.{tabelle}()""".format(schem=schem, tabelle=tabelle)
+        sql = """CREATE SCHEMA IF NOT EXISTS {schem}""".format(schem=schem)
         cursor.execute(sql)
         conn.commit()
-    # else:
-    #     print('Annahme: Tabelle oder Schema existieren')
+        
         if tu == 'ins':
             df = pd.read_csv(datp, error_bad_lines=False,sep=';', encoding="cp1252")
             engine = sqlalchemy.create_engine("postgresql://r_poc_markendatenplattform:c87e0311e19d9d066e15e6e3afe106e1@postgres04.dev.cloud.ruv.de:6432/d_poc_markendatenplattform")
@@ -31,8 +29,7 @@ def fk(gen, tu, schem, tabelle, datp):
             df.to_sql(table_name, con, if_exists='append', schema = schem)
     elif gen==0:
         print(conn.get_dsn_parameters(),"\n")
-        sql = """CREATE SCHEMA IF NOT EXISTS {schem}; 
-        CREATE TABLE IF NOT EXISTS {schem}.{tabelle}()""".format(schem=schem, tabelle=tabelle)
+        sql = """CREATE SCHEMA IF NOT EXISTS {schem}""".format(schem=schem, tabelle=tabelle)
         cursor.execute(sql)
         conn.commit()
 
