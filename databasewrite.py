@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-databasewrite v1.0
+databasewrite v1.1
 
 """
 
@@ -65,7 +65,9 @@ def func_CreateSchema(schema) -> bool:
 def func_WriteFromDF( df: pd.DataFrame, 
                       schema: str,
                       table: str, 
-                      opt_ifexists: str = 'append'  ) -> bool:
+                      opt_ifexists: str = 'append',
+                      opt_writeindex: bool = False,
+                      ) -> bool:
     """
     Funktion zum Schreiben eines Pandas Dataframes in ein bestehendes(!) Schema.
     
@@ -75,6 +77,9 @@ def func_WriteFromDF( df: pd.DataFrame,
     table: String mit Name der Tabelle. Tabelle kann, muss aber nicht existieren
     opt_ifexists: String mit einem der Werte "append", "replace" oder "fail". Default ist "append"
         Verhalten des Schreibbefehls, falls Tabelle bereits existiert
+    opt_writeindex: Bool, die angibt, ob der Index des Dataframes als eigene Spalte in der Datenbank
+        gespeichert werden soll (True) oder nicht gespeichert wird (False); False könnte gerade
+        geeignet sein, wenn man append-Option wählt und fortlaufend eine Tabelle ergänzen möchte.
     
     OUTPUTS
     bool, die True ist, falls Speicherung erfolgreich; False sonst    
@@ -97,7 +102,8 @@ def func_WriteFromDF( df: pd.DataFrame,
     
     #Schreibbefehl
     try:
-        df.to_sql(name=table, con=con , schema=schema, if_exists = opt_ifexists )
+        df.to_sql(name=table, con=con , schema=schema, 
+                  if_exists = opt_ifexists, index = opt_writeindex )
     except Exception as e:
         print('FEHLER bei Speicherung:')
         print(e) 
@@ -113,8 +119,10 @@ def func_WriteFromCSV(csv_path: str,
                       schema: str,
                       table: str, 
                       opt_ifexists: str = 'append',
+                      opt_writeindex: bool = False,
                       csv_sep: str = ';',
-                      csv_encoding: str = 'cp1252') -> bool:
+                      csv_encoding: str = 'cp1252',
+                      ) -> bool:
     """
     Funktion zum Schreiben einer CSV in ein bestehendes(!) Schema.
     Die Funktion liest eine CSV als Pandas-Dataframe ein und ruft dann func_WriteFromDF() auf.
@@ -125,6 +133,9 @@ def func_WriteFromCSV(csv_path: str,
     table: String mit Name der Tabelle. Tabelle kann, muss aber nicht existieren
     opt_ifexists: String mit einem der Werte "append", "replace" oder "fail". Default ist "append"
         Verhalten des Schreibbefehls, falls Tabelle bereits existiert
+    opt_writeindex: Bool, die angibt, ob der Index des Dataframes als eigene Spalte in der Datenbank
+        gespeichert werden soll (True) oder nicht gespeichert wird (False); False könnte gerade
+        geeignet sein, wenn man append-Option wählt und fortlaufend eine Tabelle ergänzen möchte.
     csv_sep: (optional) String des CSV Separators am Zeilenende. Default ist ';'
     csv_encoding: (optional) String des CSV Encoding. Default ist 'cp1252'
     
@@ -141,7 +152,7 @@ def func_WriteFromCSV(csv_path: str,
         return False
      
     #Aufrufen von func_WriteFromDF()
-    bool_SaveSucces = func_WriteFromDF(df, schema, table, opt_ifexists)
+    bool_SaveSucces = func_WriteFromDF(df, schema, table, opt_ifexists, opt_writeindex)
      
      
     return bool_SaveSucces
@@ -157,7 +168,7 @@ if __name__ == '__main__':
     
     #Namen von Schema und Tabelle
     schema = 'test_schema'
-    table = 'test_tabelle'
+    table = 'test_tabelle' 
     
     #Beispieldataframe
     df = pd.DataFrame(data = {'A':[10,20,30], 'B':['AAA','BBB','CCC']} , 
@@ -167,7 +178,11 @@ if __name__ == '__main__':
     func_CreateSchema(schema=schema)
     
     #Speichern des Dataframes    
-    bool_SaveSuccess = func_WriteFromDF(df=df, schema=schema, table=table, opt_ifexists='replace')
+    #Im Beispiel ausgewählt, dass ...
+        # möglicherweise bestehender Dataframe ersetzt wird,
+        # und der Index des Dataframes als eigene Spalte gesichert wird.
+    bool_SaveSuccess = func_WriteFromDF(df=df, schema=schema, table=table, 
+                                        opt_ifexists='replace', opt_writeindex=True)
     
     
     
