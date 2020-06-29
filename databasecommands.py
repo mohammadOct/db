@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-databasecommans v1.0
+databasecommans v1.3
 
 """
 
@@ -22,16 +22,11 @@ func_WriteFromCSV: Schreiben einer CSV Datei in ein existierendes Schema
 
 # Datenbankparameter
 database = 'd_poc_markendatenplattform'
-user = 'r_poc_markendatenplattform'
-password = 'c87e0311e19d9d066e15e6e3afe106e1'
-host = 'postgres04.dev.cloud.ruv.de'
+host = 'flt027673.ruv.de'
 port = '6432'
 
-engine_str = 'postgresql://' + user + ':' + password + '@' \
-             + host + ':' + port + '/' + database
 
-
-def func_CreateSchema(schema) -> bool:
+def func_CreateSchema(user, password, schema) -> bool:
     """
     Funktion zur Anlage eines Schemas und (optional einer Tabelle)
     
@@ -70,12 +65,14 @@ def func_CreateSchema(schema) -> bool:
 
 # ###############################################################
     
-def func_WriteFromDF( df: pd.DataFrame, 
-                      schema: str,
-                      table: str, 
-                      opt_ifexists: str = 'append',
-                      opt_writeindex: bool = False,
-                      ) -> bool:
+def func_WriteFromDF(user: str,
+                     password: str,
+                     df: pd.DataFrame,
+                     schema: str,
+                     table: str,
+                     opt_ifexists: str = 'append',
+                     opt_writeindex: bool = False,
+                     ) -> bool:
     """
     Funktion zum Schreiben eines Pandas Dataframes in ein bestehendes(!) Schema.
     
@@ -101,6 +98,9 @@ def func_WriteFromDF( df: pd.DataFrame,
         
     # Verbindung zu r_poc_markendatenplattform herstellen
     try:
+        engine_str = 'postgresql://' + user + ':' + password + '@' \
+                     + host + ':' + port + '/' + database
+    
         engine = sqlalchemy.create_engine(engine_str)
         con = engine.connect() 
     except Exception as e:
@@ -123,7 +123,9 @@ def func_WriteFromDF( df: pd.DataFrame,
 # ###############################################################
 
 
-def func_WriteFromCSV(csv_path: str, 
+def func_WriteFromCSV(user: str,
+                      password: str,
+                      csv_path: str,
                       schema: str,
                       table: str, 
                       opt_ifexists: str = 'append',
@@ -163,7 +165,7 @@ def func_WriteFromCSV(csv_path: str,
         return False
      
     #Aufrufen von func_WriteFromDF()
-    bool_SaveSucces = func_WriteFromDF(df, schema, table, opt_ifexists, opt_writeindex)
+    bool_SaveSucces = func_WriteFromDF(user, password, schema, table, opt_ifexists, opt_writeindex)
      
      
     return bool_SaveSucces
@@ -171,7 +173,9 @@ def func_WriteFromCSV(csv_path: str,
 # ###############################################################
 
 
-def func_ReadTableFromDB(schema: str,
+def func_ReadTableFromDB(user: str,
+                         password: str,
+                         schema: str,
                          table: str,
                          columns: list = '*',
                          ) -> pd.DataFrame:
@@ -245,7 +249,9 @@ def func_ReadTableFromDB(schema: str,
 # ###############################################################
 
 
-def func_ReadSQLStatementFromDB(sql_statement: str,
+def func_ReadSQLStatementFromDB(user: str,
+                                password: str,
+                                sql_statement: str,
                                 ) -> pd.DataFrame:
     """
     Funktion zum Einlesen eines pd.DataFrames durch komplettes SQL Statement
@@ -294,30 +300,54 @@ def func_ReadSQLStatementFromDB(sql_statement: str,
 # Skript zur Ausführung
 if __name__ == '__main__':
     
+    # user & passwort
+    user = 'r_poc_markendatenplattform'
+    password = '***'
+
+    print(f'Es wird mit folgenden Zugangsdaten gearbeitet:\n'
+          f'User: {user}\n'
+          f'Pwrd: {password}\n'
+          )
+
     # Namen von Schema und Tabelle
     schema = 'test_schema'
     table = 'test_tabelle'
-    
+
     # Beispieldataframe
     df = pd.DataFrame(data={'A': [10, 20, 30], 'B': ['AAA', 'BBB', 'CCC']},
                       index=pd.Index(['aa', 'bb', 'cc'], name='myindex'))
-    
+
     # Anlegen des Schemas (nur nötig, falls es noch nicht existiert)
     # func_CreateSchema(schema=schema)
-    
+
     # Speichern des Dataframes
     # Im Beispiel ausgewählt, dass ...
     # - möglicherweise bestehender Dataframe ersetzt wird,
     # - und der Index des Dataframes als eigene Spalte gesichert wird.
-    bool_SaveSuccess = func_WriteFromDF(df=df, schema=schema, table=table, 
-                                        opt_ifexists='replace', opt_writeindex=True)
+    bool_SaveSuccess = func_WriteFromDF(user=user,
+                                        password=password,
+                                        df=df,
+                                        schema=schema,
+                                        table=table,
+                                        opt_ifexists='replace',
+                                        opt_writeindex=True,
+                                        )
+    
     
     # Einlesen von Spalten der gespeicherten Tabelle
-    df_read1 = func_ReadTableFromDB(schema=schema, table=table, columns=['A', 'B'])
-    
+    df_read1 = func_ReadTableFromDB(user=user,
+                                    password=password,
+                                    schema=schema,
+                                    table=table,
+                                    columns=['A', 'B'],
+                                    )
+
     # Alternatives Einlesen der Tabelle über explizites SQL Statement
     sql_statement = 'SELECT *\n' \
                     'FROM ' + schema + '.' + table
 
-    df_read2 = func_ReadSQLStatementFromDB(sql_statement=sql_statement)
+    df_read2 = func_ReadSQLStatementFromDB(user=user,
+                                           password=password,
+                                           sql_statement=sql_statement,
+                                           )
 
