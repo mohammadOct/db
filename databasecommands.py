@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-databasecommans v1.3
+databasecommans v1.4
 
 """
 
 import psycopg2
 
-import  sqlalchemy 
+import sqlalchemy
 import pandas as pd
 
 
@@ -117,7 +117,7 @@ def func_WriteFromDF(user: str,
         print(e) 
         return False
     
-    print('Speicherung erfolgreich.\n')
+    print('Speicherung erfolgreich.')
     return True
 
 # ###############################################################
@@ -178,6 +178,7 @@ def func_ReadTableFromDB(user: str,
                          schema: str,
                          table: str,
                          columns: list = '*',
+                         where_stmt: str = '',
                          ) -> pd.DataFrame:
     """
     Funktion zum Einlesen einer bestehenden Tabelle als pandas DataFrame
@@ -192,6 +193,13 @@ def func_ReadTableFromDB(user: str,
         beizubehalten.
     schema: String mit Name des Schemas.
     table: String mit Name der Tabelle.
+    columns: Liste mit Spaltennamen die gezogen werden sollen; alternativ auch einzelner Name oder
+        '*' für das Ziehen aller Spalten
+    where_stmt: optionaler String, der eine WHERE-clause an das Abfrage SQL Statement hängt. Dabei
+        ist nur der String hinter "WHERE " anzugeben, also z.B. 'wertspalte=10' oder
+        'namensspalte=\'Egon\''. Bei leerem String '' (Defaultwert) wird nichts angehängt.
+        Beachte: Spaltennamen mit Großbuchstaben müssten in double quotes ("") innerhalb des Strings
+        gefasst werden; String-Argumente müssen in single quotes ('') bzw. (\'\') gefasst werden.
 
     OUTPUTS
     df, eingelesener pd.DataFrame; leerer DataFrame, falls Fehler auftritt
@@ -229,6 +237,10 @@ def func_ReadTableFromDB(user: str,
     sql_statement = ('SELECT ' + col_string + '\n'
                      'FROM ' + schema + '.' + table)
     
+    # Anhängen des optionalen WHERE Statements:
+    if len(where_stmt) > 0:
+        sql_statement += '\nWHERE ' + where_stmt
+        
     # Ausgabe des SQL Statements für visuelle Überprüfung
     print('SQL-Abfrage:\n' + sql_statement + '\n')
     
@@ -293,6 +305,69 @@ def func_ReadSQLStatementFromDB(user: str,
     
     return df
 
+
+# ###############################################################
+def func_ListAllTablesOfSchema(
+        user: str,
+        password: str,
+        schema: str,
+        ) -> list:
+    """
+    Funktion zum Schreiben eines Pandas Dataframes in ein bestehendes(!) Schema.
+
+    INPUTS
+    df: der zu schreibende Dataframe
+    schema: String mit Name des Schemas. Schema muss bereits existieren
+
+    OUTPUTS
+    liste mit Tabellennamen
+    """
+    
+    # Verbindung zu r_poc_markendatenplattform herstellen
+    engine = func_GetEngine(user=user, password=password)
+    
+    if engine is False:
+        return []
+    
+    # Lesebefehl
+    try:
+        inspector = sqlalchemy.inspect(engine)
+        list_of_tables = inspector.get_table_names(schema=schema)
+        
+    except Exception as e:
+        print('FEHLER bei Inspector Verbidnung:')
+        print(e)
+        return []
+    
+    return list_of_tables
+
+
+# ###############################################################
+def func_GetEngine(
+        user: str,
+        password: str,
+        ) -> list:
+    """
+    Funktion Verbinden einer engine für weitere Verarbeitung mit SQLalchemy.
+
+    OUTPUTS
+    sql engine
+    """
+    
+    # Verbindung zu r_poc_markendatenplattform herstellen
+    try:
+        engine_str = 'postgresql://' + user + ':' + password + '@' \
+                     + host + ':' + port + '/' + database
+        
+        engine = sqlalchemy.create_engine(engine_str)
+    except Exception as e:
+        print('FEHLER bei Verbidnung zu r_poc_markendatenplattform:')
+        print(e)
+        return False
+    
+    return engine
+    
+    
 # ###############################################################
 # ###############################################################
 
@@ -302,7 +377,7 @@ if __name__ == '__main__':
     
     # user & passwort
     user = 'r_poc_markendatenplattform'
-    password = '***'
+    password = str(input(f'Bitte password für user {user} eingeben:'))
 
     print(f'Es wird mit folgenden Zugangsdaten gearbeitet:\n'
           f'User: {user}\n'
@@ -314,7 +389,7 @@ if __name__ == '__main__':
     table = 'test_tabelle'
 
     # Beispieldataframe
-    df = pd.DataFrame(data={'A': [10, 20, 30], 'B': ['AAA', 'BBB', 'CCC']},
+    df = pd.DataFrame(data={'A': [10, 20, 30], 'B': ['AAA', 'BBB', 'BBB']},
                       index=pd.Index(['aa', 'bb', 'cc'], name='myindex'))
 
     # Anlegen des Schemas (nur nötig, falls es noch nicht existiert)
@@ -340,6 +415,7 @@ if __name__ == '__main__':
                                     schema=schema,
                                     table=table,
                                     columns=['A', 'B'],
+                                    where_stmt='"B"=\'BBB\''
                                     )
 
     # Alternatives Einlesen der Tabelle über explizites SQL Statement
