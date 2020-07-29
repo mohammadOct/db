@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-databasecommans v1.4
+databasecommans v1.5
 
 """
 
@@ -111,7 +111,8 @@ def func_WriteFromDF(user: str,
     # Schreibbefehl
     try:
         df.to_sql(name=table, con=con, schema=schema,
-                  if_exists=opt_ifexists, index=opt_writeindex)
+                  if_exists=opt_ifexists, index=opt_writeindex,
+                  method='multi')
     except Exception as e:
         print('FEHLER bei Speicherung:')
         print(e) 
