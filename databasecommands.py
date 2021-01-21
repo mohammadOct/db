@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-databasecommans v1.5
+databasecommans v1.6
 
 """
 
@@ -21,8 +21,8 @@ func_WriteFromCSV: Schreiben einer CSV Datei in ein existierendes Schema
 """
 
 # Datenbankparameter
-database = 'd_poc_markendatenplattform'
-host = 'flt027673.ruv.de'
+database = 'mdb_t01'
+host = 'lxm00261'
 port = '6432'
 
 
@@ -377,7 +377,7 @@ def func_GetEngine(
 if __name__ == '__main__':
     
     # user & passwort
-    user = 'r_poc_markendatenplattform'
+    user = 'xv86l9r'
     password = str(input(f'Bitte password für user {user} eingeben:'))
 
     print(f'Es wird mit folgenden Zugangsdaten gearbeitet:\n'
